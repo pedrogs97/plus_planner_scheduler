@@ -2,6 +2,7 @@
 
 from typing import Iterable, Union, List, Tuple
 from fastapi import WebSocket
+from plus_db_agent.models import SchedulerModel
 from src.scheduler.schemas import (
     Message,
     EventSchema,
@@ -9,7 +10,6 @@ from src.scheduler.schemas import (
     ErrorResponseSchema,
     ReponseEventsCalendarSchema,
 )
-from src.scheduler.models import SchedulerModel
 from src.enums import MessageType
 
 
@@ -36,10 +36,7 @@ class ClientWebSocket(WebSocket):
     async def send_invalid_message(self) -> None:
         """Send invalid message"""
         await self.send(
-            Message(
-                message_type=MessageType.INVALID,
-                clinic_id=self.clinic_id
-            )
+            Message(message_type=MessageType.INVALID, clinic_id=self.clinic_id)
         )
 
     async def send_error_message(self, error: str) -> None:
@@ -48,7 +45,7 @@ class ClientWebSocket(WebSocket):
             Message(
                 message_type=MessageType.ERROR,
                 clinic_id=self.clinic_id,
-                data=ErrorResponseSchema(error=error)
+                data=ErrorResponseSchema(error=error),
             )
         )
 
@@ -58,7 +55,7 @@ class ClientWebSocket(WebSocket):
             Message(
                 message_type=MessageType.CREATE_UUID,
                 clinic_id=self.clinic_id,
-                data=CreateUUIDSchema(uuid=uuid_code)
+                data=CreateUUIDSchema(uuid=uuid_code),
             )
         )
 
@@ -66,27 +63,26 @@ class ClientWebSocket(WebSocket):
         """Send message"""
         await self.send_json(message.model_dump())
 
-    async def send_events_calendar(
-        self,
-        events: List[SchedulerModel]
-    ) -> None:
+    async def send_events_calendar(self, events: List[SchedulerModel]) -> None:
         """Send full month calendar"""
         scheduler_events: List[EventSchema] = []
         for event in events:
-            scheduler_events.append(EventSchema(
-                id=event.id,
-                date=event.date,
-                description=event.description,
-                is_return=event.is_return,
-                is_off=event.is_off,
-                off_reason=event.off_reason,
-                patient=event.patient,
-                desk=event.desk,
-            ))
-        await self.send(Message(
-            message_type=MessageType.GET_FULL_MONTH_CALENDAR,
-            clinic_id=self.clinic_id,
-            data=ReponseEventsCalendarSchema(
-                events=scheduler_events
+            scheduler_events.append(
+                EventSchema(
+                    id=event.id,
+                    date=event.date,
+                    description=event.description,
+                    is_return=event.is_return,
+                    is_off=event.is_off,
+                    off_reason=event.off_reason,
+                    patient=event.patient,
+                    desk=event.desk,
+                )
             )
-        ))
+        await self.send(
+            Message(
+                message_type=MessageType.GET_FULL_MONTH_CALENDAR,
+                clinic_id=self.clinic_id,
+                data=ReponseEventsCalendarSchema(events=scheduler_events),
+            )
+        )

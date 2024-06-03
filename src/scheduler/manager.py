@@ -10,6 +10,8 @@ from typing import List
 from typing_extensions import Self
 from fastapi.websockets import WebSocketDisconnect
 from tortoise.exceptions import OperationalError
+from plus_db_agent.models import SchedulerModel
+from plus_db_agent.enums import SchedulerStatus
 from src.scheduler.client import ClientWebSocket
 from src.scheduler.schemas import (
     Message,
@@ -22,12 +24,12 @@ from src.scheduler.schemas import (
     GetDayCalendarSchema,
     GetFullWeekCalendarSchema,
 )
-from src.scheduler.models import SchedulerModel
 from src.utils import get_week
-from src.enums import MessageType, SchedulerStatus
+from src.enums import MessageType
 from src.scheduler.api_client import APIClient
 
 logger = logging.getLogger(__name__)
+
 
 class ConnectionManager:
     """Class defining socket events"""
@@ -99,54 +101,53 @@ class ConnectionManager:
             self.disconnect(websocket_client)
 
     async def __process_full_month_calendar(
-        self,
-        message: Message,
-        client: ClientWebSocket
+        self, message: Message, client: ClientWebSocket
     ) -> None:
         """Process full month calendar"""
         if not isinstance(message.data, GetFullMonthCalendarSchema):
             await client.send_invalid_message()
             return
         current_date = datetime.strptime(
-            f"{message.data.year}-{message.data.month}-01",
-            "%Y-%m-%d"
+            f"{message.data.year}-{message.data.month}-01", "%Y-%m-%d"
         ).date()
         scheduler_events = await SchedulerModel.filter(
             clinic_id=message.clinic_id,
             date__month=current_date.month,
-            date__year=current_date.year
+            date__year=current_date.year,
         ).all()
         await client.send_events_calendar(scheduler_events)
 
-    async def __process_full_week_calendar(self, message: Message, client: ClientWebSocket) -> None:
+    async def __process_full_week_calendar(
+        self, message: Message, client: ClientWebSocket
+    ) -> None:
         """Process full week calendar"""
         if not isinstance(message.data, GetFullWeekCalendarSchema):
             await client.send_invalid_message()
             return
         current_date = datetime.strptime(
-            f"{message.data.year}-{message.data.month}-{message.data.day}",
-            "%Y-%m-%d"
+            f"{message.data.year}-{message.data.month}-{message.data.day}", "%Y-%m-%d"
         ).date()
         week, _, _ = get_week(current_date)
         scheduler_events = await SchedulerModel.filter(
-            clinic_id=message.clinic_id,
-            date__gte=week[0],
-            date__lte=week[-1]
+            clinic_id=message.clinic_id, date__gte=week[0], date__lte=week[-1]
         ).all()
         await client.send_events_calendar(scheduler_events)
 
-    async def __process_day_calendar(self, message: Message, client: ClientWebSocket) -> None:
+    async def __process_day_calendar(
+        self, message: Message, client: ClientWebSocket
+    ) -> None:
         """Process day calendar"""
         if not isinstance(message.data, GetDayCalendarSchema):
             await client.send_invalid_message()
             return
         scheduler_events = await SchedulerModel.filter(
-            clinic_id=message.clinic_id,
-            date__date=message.data.date
+            clinic_id=message.clinic_id, date__date=message.data.date
         ).all()
         await client.send_events_calendar(scheduler_events)
 
-    async def __process_add_event(self, message: Message, client: ClientWebSocket) -> None:
+    async def __process_add_event(
+        self, message: Message, client: ClientWebSocket
+    ) -> None:
         """Process add event"""
         try:
             if not isinstance(message.data, AddEventSchema):
@@ -177,13 +178,15 @@ class ConnectionManager:
             new_message = Message(
                 message_type=MessageType.ADD_EVENT,
                 clinic_id=message.clinic_id,
-                data=new_event_schema
+                data=new_event_schema,
             )
             await self.broadcast_clinic_messages(client.clinic_id, new_message)
         except OperationalError:
             await client.send_error_message("Erro ao adicionar o evento")
 
-    async def __process_edit_event(self, message: Message, client: ClientWebSocket) -> None:
+    async def __process_edit_event(
+        self, message: Message, client: ClientWebSocket
+    ) -> None:
         """Process edit event"""
         try:
             if not isinstance(message.data, EditEventSchema):
@@ -207,13 +210,15 @@ class ConnectionManager:
             new_message = Message(
                 message_type=MessageType.EDIT_EVENT,
                 clinic_id=message.clinic_id,
-                data=new_event_schema
+                data=new_event_schema,
             )
             await self.broadcast_clinic_messages(client.clinic_id, new_message)
         except OperationalError:
             await client.send_error_message("Erro ao editar o evento")
 
-    async def __process_remove_event(self, message: Message, client: ClientWebSocket) -> None:
+    async def __process_remove_event(
+        self, message: Message, client: ClientWebSocket
+    ) -> None:
         """Process remove event"""
         try:
             if not isinstance(message.data, RemoveEventSchema):
@@ -224,13 +229,15 @@ class ConnectionManager:
             new_message = Message(
                 message_type=MessageType.REMOVE_EVENT,
                 clinic_id=message.clinic_id,
-                data=message.data
+                data=message.data,
             )
             await self.broadcast_clinic_messages(client.clinic_id, new_message)
         except OperationalError:
             await client.send_error_message("Erro ao remover o evento")
 
-    async def __process_message(self, message: Message, client: ClientWebSocket) -> None:
+    async def __process_message(
+        self, message: Message, client: ClientWebSocket
+    ) -> None:
         """Process message"""
         try:
             if message.message_type == MessageType.GET_FULL_MONTH_CALENDAR:
@@ -253,8 +260,7 @@ class ConnectionManager:
                     await self.disconnect(client)
                 await client.send(
                     Message(
-                        message_type=MessageType.CONNECTION,
-                        clinic_id=message.clinic_id
+                        message_type=MessageType.CONNECTION, clinic_id=message.clinic_id
                     )
                 )
             else:

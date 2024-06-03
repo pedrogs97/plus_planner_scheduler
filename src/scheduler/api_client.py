@@ -1,9 +1,12 @@
+"""API Client"""
+
 from typing import Optional
 from datetime import datetime
 import requests
+from plus_db_agent.models import HolidayModel
 from src.config import INVERTEXTO_TOKEN, CORE_API_URL, CORE_KEY
-from src.scheduler.models import HolidayModel
 from src.enums import Ufs
+
 
 class APIClient:
     """API Client"""
@@ -21,8 +24,7 @@ class APIClient:
     async def __save_holidays(self, holidays: dict) -> None:
         """Save holidays in the database"""
         await HolidayModel.create(
-            **holidays,
-            date=datetime.strptime(holidays["date"], "%Y-%m-%d")
+            **holidays, date=datetime.strptime(holidays["date"], "%Y-%m-%d")
         )
 
     def get_current_year_holidays(self, state: Optional[Ufs] = None) -> bool:
@@ -38,7 +40,7 @@ class APIClient:
             if success:
                 self.__save_holidays(response.json())
             return success
-        except Exception: # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             return False
 
     def check_if_clinic_exist(self, clinic_id: int) -> bool:

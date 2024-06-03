@@ -1,12 +1,14 @@
 """Schemas for the scheduler module."""
+
 from datetime import datetime, date
 from typing import Optional, Union
 
 from pydantic import Field, model_validator
 from typing_extensions import Self
+from plus_db_agent.enums import SchedulerStatus
+from plus_db_agent.schemas import BaseSchema
 
-from src.base import BaseSchema
-from src.enums import MessageType, SchedulerStatus
+from src.enums import MessageType
 from src.scheduler.api_client import APIClient
 
 
@@ -168,15 +170,17 @@ class Message(BaseSchema):
 
     message_type: MessageType
     clinic_id: int = Field(alias="clinicId")
-    data: Optional[Union[
-        AddEventSchema,
-        EditEventSchema,
-        GetFullMonthCalendarSchema,
-        GetFullWeekCalendarSchema,
-        GetDayCalendarSchema,
-        RemoveEventSchema,
-        ConnectionSchema,
-        CreateUUIDSchema,
-        ErrorResponseSchema,
-        ReponseEventsCalendarSchema,
-    ]] = None
+    data: Optional[
+        Union[
+            AddEventSchema,
+            EditEventSchema,
+            GetFullMonthCalendarSchema,
+            GetFullWeekCalendarSchema,
+            GetDayCalendarSchema,
+            RemoveEventSchema,
+            ConnectionSchema,
+            CreateUUIDSchema,
+            ErrorResponseSchema,
+            ReponseEventsCalendarSchema,
+        ]
+    ] = None

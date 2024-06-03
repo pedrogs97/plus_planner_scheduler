@@ -8,8 +8,9 @@ from logging.handlers import TimedRotatingFileHandler
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from tortoise import Tortoise, connections
+from tortoise import connections
 from tortoise.exceptions import DBConnectionError
+from plus_db_agent.manager import close, init
 
 from src.config import (
     BASE_DIR,
@@ -17,7 +18,6 @@ from src.config import (
     FORMAT,
     LOG_FILENAME,
     ORIGINS,
-    TORTOISE_ORM,
 )
 from src.scheduler.manager import ConnectionManager
 
@@ -36,18 +36,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Context manager for the lifespan of the application."""
     logger.info("Service Version %s", app.version)
     # db connected
-    await Tortoise.init(config=TORTOISE_ORM)
+    await init()
     ConnectionManager().start_main_thread()
     yield
-    # app teardown
-    # db connections closed
-    await connections.close_all()
+    await close()
 
 
 appAPI = FastAPI(

@@ -2,21 +2,6 @@
 
 from enum import Enum
 
-class SchedulerStatus(str, Enum):
-    """
-    Scheduler Status Enum
-
-    WAITING_CONFIRMATION - Waiting confirmation
-    CONFIRMED - Confirmed
-    CANCELED - Canceled
-    DONE - Done
-    """
-
-    WAITING_CONFIRMATION = "WAITING_CONFIRMATION"
-    CONFIRMED = "CONFIRMED"
-    CANCELED = "CANCELED"
-    DONE = "DONE"
-
 
 class Ufs(str, Enum):
     """Brazil ufs"""
