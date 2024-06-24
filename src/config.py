@@ -31,22 +31,6 @@ def get_database_url(test=False, sqlite=False):
     return f"postgres://{user}:{password}@{server}:{port}/{db}"
 
 
-TORTOISE_ORM_TEST = {
-    "connections": {"default": "sqlite://db_test.sqlite3"},
-    "apps": {
-        "models": {
-            "models": [
-                "aerich.models",
-                "src.clinic_office.models",
-                "src.auth.models",
-                "src.scheduler.models",
-                "src.billing.models",
-            ],
-            "default_connection": "default",
-        },
-    },
-}
-
 DEBUG = os.getenv("DEBUG")
 
 # Logging config.
@@ -62,7 +46,6 @@ LOG_FILENAME = f"{BASE_DIR}/logs/{date_str}.log"
 DEFAULT_DATE_FORMAT = "%d/%m/%Y"
 DEFAULT_DATE_TIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 
-
 ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -74,5 +57,5 @@ ORIGINS = [
 ]
 
 INVERTEXTO_TOKEN = os.getenv("INVERTEXTO_TOKEN")
-CORE_API_URL = os.getenv("CORE_API_URL")
-CORE_KEY = os.getenv("CORE_KEY")
+AUTH_API_URL = os.getenv("AUTH_API_URL")
+AUTH_KEY = os.getenv("AUTH_KEY")

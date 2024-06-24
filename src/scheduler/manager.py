@@ -1,12 +1,13 @@
 """Connection Manager Module"""
 
+import time
 from datetime import datetime
 import logging
 import asyncio
 from threading import Thread
 import uuid
 import json
-from typing import List
+from typing import List, Union
 from typing_extensions import Self
 from fastapi.websockets import WebSocketDisconnect
 from tortoise.exceptions import OperationalError
@@ -37,6 +38,7 @@ class ConnectionManager:
     _instance: "ConnectionManager" = None
     client_connections: List[ClientWebSocket] = []
     queue = asyncio.Queue()
+    api_client = APIClient()
 
     def __new__(cls) -> Self:
         """Singleton instance"""
@@ -44,15 +46,23 @@ class ConnectionManager:
             cls._instance = super(ConnectionManager, cls).__new__(cls)
         return cls._instance
 
-    async def connect(self, websocket: ClientWebSocket, clinic_id: int):
+    async def connect(
+        self, websocket: ClientWebSocket, clinic_id: int, token: Union[str, None]
+    ):
         """Add a new client connection to the list on connect"""
-        if APIClient().check_if_clinic_exist(clinic_id):
+        if (
+            token
+            and self.api_client.check_is_token_is_valid(token)
+            and self.api_client.check_if_clinic_exist(clinic_id)
+        ):
             new_uuid = uuid.uuid4().hex
-            await websocket.accept(clinic_id=clinic_id, new_uuid=new_uuid)
+            await websocket.accept(clinic_id=clinic_id, new_uuid=new_uuid, token=token)
             await websocket.send_new_uuid(new_uuid)
             self.client_connections.append(websocket)
             self.__listenner(websocket)
         else:
+            await websocket.send_error_message("Token inválido ou clínica inexistente")
+            time.sleep(0.1)
             await websocket.close()
 
     async def disconnect(self, client: ClientWebSocket):
@@ -255,7 +265,7 @@ class ConnectionManager:
             elif message.message_type == MessageType.CONNECTION:
                 if not isinstance(message.data, ConnectionSchema):
                     await client.send_invalid_message()
-                if not APIClient().check_is_token_is_valid(message.data.token):
+                if not self.api_client.check_is_token_is_valid(message.data.token):
                     await client.send_error_message("Token inválido")
                     await self.disconnect(client)
                 await client.send(
