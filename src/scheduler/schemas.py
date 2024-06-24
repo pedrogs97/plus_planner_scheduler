@@ -1,12 +1,12 @@
 """Schemas for the scheduler module."""
 
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import Optional, Union
 
-from pydantic import Field, model_validator
-from typing_extensions import Self
 from plus_db_agent.enums import SchedulerStatus
 from plus_db_agent.schemas import BaseSchema
+from pydantic import Field, model_validator
+from typing_extensions import Self
 
 from src.enums import MessageType
 from src.scheduler.api_client import APIClient

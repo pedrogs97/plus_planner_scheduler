@@ -1,16 +1,18 @@
 """Custom ClientWebSocket"""
 
-from typing import Iterable, Union, List, Tuple
+from typing import Iterable, List, Tuple, Union
+
 from fastapi import WebSocket
 from plus_db_agent.models import SchedulerModel
+
+from src.enums import MessageType
 from src.scheduler.schemas import (
-    Message,
-    EventSchema,
     CreateUUIDSchema,
     ErrorResponseSchema,
+    EventSchema,
+    Message,
     ReponseEventsCalendarSchema,
 )
-from src.enums import MessageType
 
 
 class ClientWebSocket(WebSocket):

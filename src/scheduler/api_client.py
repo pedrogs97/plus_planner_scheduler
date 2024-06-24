@@ -1,10 +1,12 @@
 """API Client"""
 
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
 import requests
 from plus_db_agent.models import HolidayModel
-from src.config import INVERTEXTO_TOKEN, AUTH_API_URL, AUTH_KEY
+
+from src.config import AUTH_API_URL, AUTH_KEY, INVERTEXTO_TOKEN
 from src.enums import Ufs
 
 

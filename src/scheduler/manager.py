@@ -1,33 +1,35 @@
 """Connection Manager Module"""
 
-import time
-from datetime import datetime
-import logging
 import asyncio
-from threading import Thread
-import uuid
 import json
+import logging
+import time
+import uuid
+from datetime import datetime
+from threading import Thread
 from typing import List, Union
-from typing_extensions import Self
+
 from fastapi.websockets import WebSocketDisconnect
-from tortoise.exceptions import OperationalError
-from plus_db_agent.models import SchedulerModel
 from plus_db_agent.enums import SchedulerStatus
-from src.scheduler.client import ClientWebSocket
-from src.scheduler.schemas import (
-    Message,
-    EventSchema,
-    EditEventSchema,
-    AddEventSchema,
-    RemoveEventSchema,
-    ConnectionSchema,
-    GetFullMonthCalendarSchema,
-    GetDayCalendarSchema,
-    GetFullWeekCalendarSchema,
-)
-from src.utils import get_week
+from plus_db_agent.models import SchedulerModel
+from tortoise.exceptions import OperationalError
+from typing_extensions import Self
+
 from src.enums import MessageType
 from src.scheduler.api_client import APIClient
+from src.scheduler.client import ClientWebSocket
+from src.scheduler.schemas import (
+    AddEventSchema,
+    ConnectionSchema,
+    EditEventSchema,
+    EventSchema,
+    GetDayCalendarSchema,
+    GetFullMonthCalendarSchema,
+    GetFullWeekCalendarSchema,
+    Message,
+    RemoveEventSchema,
+)
+from src.utils import get_week
 
 logger = logging.getLogger(__name__)
 

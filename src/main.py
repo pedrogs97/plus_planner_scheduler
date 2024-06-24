@@ -8,17 +8,11 @@ from logging.handlers import TimedRotatingFileHandler
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from plus_db_agent.manager import close, init
 from tortoise import connections
 from tortoise.exceptions import DBConnectionError
-from plus_db_agent.manager import close, init
 
-from src.config import (
-    BASE_DIR,
-    DATE_FORMAT,
-    FORMAT,
-    LOG_FILENAME,
-    ORIGINS,
-)
+from src.config import BASE_DIR, DATE_FORMAT, FORMAT, LOG_FILENAME, ORIGINS
 from src.scheduler.manager import ConnectionManager
 
 if not os.path.exists(f"{BASE_DIR}/logs/"):
