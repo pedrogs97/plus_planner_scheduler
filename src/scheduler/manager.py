@@ -7,7 +7,7 @@ import time
 import uuid
 from datetime import datetime
 from threading import Thread
-from typing import List, Union
+from typing import List
 
 from fastapi.websockets import WebSocketDisconnect
 from plus_db_agent.enums import SchedulerStatus
@@ -48,17 +48,11 @@ class ConnectionManager:
             cls._instance = super(ConnectionManager, cls).__new__(cls)
         return cls._instance
 
-    async def connect(
-        self, websocket: ClientWebSocket, clinic_id: int, token: Union[str, None]
-    ):
+    async def connect(self, websocket: ClientWebSocket, clinic_id: int):
         """Add a new client connection to the list on connect"""
-        if (
-            token
-            and self.api_client.check_is_token_is_valid(token)
-            and self.api_client.check_if_clinic_exist(clinic_id)
-        ):
+        if self.api_client.check_if_clinic_exist(clinic_id):
             new_uuid = uuid.uuid4().hex
-            await websocket.accept(clinic_id=clinic_id, new_uuid=new_uuid, token=token)
+            await websocket.accept(clinic_id=clinic_id, new_uuid=new_uuid)
             await websocket.send_new_uuid(new_uuid)
             self.client_connections.append(websocket)
             self.__listenner(websocket)
@@ -247,34 +241,50 @@ class ConnectionManager:
         except OperationalError:
             await client.send_error_message("Erro ao remover o evento")
 
+    async def __process_connection(self, message: Message, client: ClientWebSocket):
+        """Process connection"""
+        if not isinstance(message.data, ConnectionSchema):
+            await client.send_invalid_message()
+            return
+        if not self.api_client.check_is_token_is_valid(message.data.token):
+            await client.send_error_message("Token inválido")
+            time.sleep(0.1)
+            await self.disconnect(client)
+            return
+        await client.send(
+            Message(message_type=MessageType.CONNECTION, clinic_id=message.clinic_id)
+        )
+        client.token = message
+
     async def __process_message(
         self, message: Message, client: ClientWebSocket
     ) -> None:
         """Process message"""
         try:
-            if message.message_type == MessageType.GET_FULL_MONTH_CALENDAR:
+            if message.message_type == MessageType.CONNECTION:
+                await self.__process_connection(message, client)
+            elif (
+                client.token
+                and message.message_type == MessageType.GET_FULL_MONTH_CALENDAR
+            ):
                 await self.__process_full_month_calendar(message, client)
-            elif message.message_type == MessageType.GET_FULL_WEEK_CALENDAR:
+            elif (
+                client.token
+                and message.message_type == MessageType.GET_FULL_WEEK_CALENDAR
+            ):
                 await self.__process_full_week_calendar(message, client)
-            elif message.message_type == MessageType.GET_DAY_CALENDAR:
+            elif client.token and message.message_type == MessageType.GET_DAY_CALENDAR:
                 await self.__process_day_calendar(message, client)
-            elif message.message_type == MessageType.ADD_EVENT:
+            elif client.token and message.message_type == MessageType.ADD_EVENT:
                 await self.__process_add_event(message, client)
-            elif message.message_type == MessageType.EDIT_EVENT:
+            elif client.token and message.message_type == MessageType.EDIT_EVENT:
                 await self.__process_edit_event(message, client)
-            elif message.message_type == MessageType.REMOVE_EVENT:
+            elif client.token and message.message_type == MessageType.REMOVE_EVENT:
                 await self.__process_remove_event(message, client)
-            elif message.message_type == MessageType.CONNECTION:
-                if not isinstance(message.data, ConnectionSchema):
-                    await client.send_invalid_message()
-                if not self.api_client.check_is_token_is_valid(message.data.token):
-                    await client.send_error_message("Token inválido")
-                    await self.disconnect(client)
-                await client.send(
-                    Message(
-                        message_type=MessageType.CONNECTION, clinic_id=message.clinic_id
-                    )
-                )
+            elif not client.token:
+                await client.send_error_message("Token inválido")
+                time.sleep(0.1)
+                await self.disconnect(client)
             else:
                 await client.send_invalid_message()
         except (AttributeError, OperationalError):

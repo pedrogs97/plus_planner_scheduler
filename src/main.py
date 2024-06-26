@@ -75,4 +75,4 @@ async def health():
 async def scheduler(websocket: WebSocket, clinic_id: int):
     """Websocket connection"""
     manager = ConnectionManager()
-    await manager.connect(websocket, clinic_id, websocket.headers.get("authorization"))
+    await manager.connect(websocket, clinic_id)

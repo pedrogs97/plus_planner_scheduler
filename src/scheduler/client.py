@@ -1,6 +1,6 @@
 """Custom ClientWebSocket"""
 
-from typing import Iterable, List, Tuple, Union
+from typing import Iterable, List, Optional, Tuple, Union
 
 from fastapi import WebSocket
 from plus_db_agent.models import SchedulerModel
@@ -18,7 +18,7 @@ from src.scheduler.schemas import (
 class ClientWebSocket(WebSocket):
     """Custom ClientWebSocket"""
 
-    token: str
+    token: Optional[str] = None
     clinic_id: int
     uuid: str
 
@@ -28,14 +28,12 @@ class ClientWebSocket(WebSocket):
         headers: Union[Iterable[Tuple[bytes, bytes]], None] = None,
         client_id: Union[int, None] = None,
         uuid_code: Union[str, None] = None,
-        token: Union[str, None] = None,
     ) -> None:
         await super().accept(subprotocol, headers)
         if client_id is None or uuid_code is None:
             return await self.send_error_message("Client ID ou UUID não informado")
         self.clinic_id = client_id
         self.uuid = uuid_code
-        self.token = token
 
     async def send_invalid_message(self) -> None:
         """Send invalid message"""
