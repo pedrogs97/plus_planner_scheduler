@@ -23,7 +23,6 @@ class AddEventSchema(BaseSchema):
     clinic_id: int = Field(alias="clinicId")
     patient_id: int = Field(alias="patientId")
     patient: str
-    user: str
     desk_id: int = Field(alias="deskId")
     desk: str
 

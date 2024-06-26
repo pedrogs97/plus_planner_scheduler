@@ -168,7 +168,7 @@ class ConnectionManager:
                 off_reason=message.data.off_reason,
                 clinic_id=message.clinic_id,
                 patient=message.data.patient,
-                user=message.data.user,
+                user=client.user_id,
                 desk=message.data.desk,
             )
             new_event_schema = EventSchema(
@@ -187,7 +187,7 @@ class ConnectionManager:
                 data=new_event_schema,
             )
             await self.broadcast_clinic_messages(client.clinic_id, new_message)
-        except OperationalError:
+        except (OperationalError, AttributeError):
             await client.send_error_message("Erro ao adicionar o evento")
 
     async def __process_edit_event(
@@ -243,18 +243,27 @@ class ConnectionManager:
 
     async def __process_connection(self, message: Message, client: ClientWebSocket):
         """Process connection"""
-        if not isinstance(message.data, ConnectionSchema):
-            await client.send_invalid_message()
-            return
-        if not self.api_client.check_is_token_is_valid(message.data.token):
-            await client.send_error_message("Token inválido")
+        try:
+            if not isinstance(message.data, ConnectionSchema):
+                await client.send_invalid_message()
+                return
+            if not self.api_client.check_is_token_is_valid(message.data.token):
+                await client.send_error_message("Token inválido")
+                time.sleep(0.1)
+                await self.disconnect(client)
+                return
+            user_dict = self.api_client.get_user_by_token(client.token)
+            client.token = message
+            client.user_id = user_dict["id"]
+            await client.send(
+                Message(
+                    message_type=MessageType.CONNECTION, clinic_id=message.clinic_id
+                )
+            )
+        except (OperationalError, AttributeError):
+            await client.send_error_message("Erro ao validar conexão")
             time.sleep(0.1)
             await self.disconnect(client)
-            return
-        await client.send(
-            Message(message_type=MessageType.CONNECTION, clinic_id=message.clinic_id)
-        )
-        client.token = message
 
     async def __process_message(
         self, message: Message, client: ClientWebSocket

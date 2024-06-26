@@ -21,6 +21,7 @@ class ClientWebSocket(WebSocket):
     token: Optional[str] = None
     clinic_id: int
     uuid: str
+    user_id: Optional[int] = None
 
     async def accept(
         self,

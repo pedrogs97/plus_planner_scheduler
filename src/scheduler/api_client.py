@@ -68,7 +68,14 @@ class APIClient:
 
     def check_is_token_is_valid(self, token: str) -> bool:
         """Check if token is valid"""
-        url = f"{AUTH_API_URL}/auth/check-token/"
+        url = f"{AUTH_API_URL}/manager/check-token/"
         headers = {"X-API-Key": AUTH_KEY, "Authorization": f"Bearer {token}"}
         response = requests.get(url, headers=headers, timeout=500)
         return response.status_code == 200 and response.json()
+
+    def get_user_by_token(self, token: str) -> dict:
+        """Get user by token"""
+        url = f"{AUTH_API_URL}/manager/me/"
+        headers = {"X-API-Key": AUTH_KEY, "Authorization": f"Bearer {token}"}
+        response = requests.get(url, headers=headers, timeout=500)
+        return response.json()
