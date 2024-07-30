@@ -5,11 +5,10 @@ from typing import Optional, Union
 
 from plus_db_agent.enums import SchedulerStatus
 from plus_db_agent.schemas import BaseSchema
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from typing_extensions import Self
 
 from src.enums import MessageType
-from src.scheduler.api_client import APIClient
 
 
 class AddEventSchema(BaseSchema):
@@ -33,30 +32,31 @@ class AddEventSchema(BaseSchema):
             raise ValueError("Informe o motivo da ausência.")
         return self
 
-    @model_validator(mode="before")
-    def check_date(self) -> Self:
+    @field_validator("date", mode="before")
+    @classmethod
+    def check_date(cls, value: datetime) -> datetime:
         """Check if date is in the future."""
-        if self.date < datetime.now():
+        if value < datetime.now():
             raise ValueError("A data do agendamento deve ser futura.")
-        return self
+        return value
 
-    @model_validator(mode="before")
-    def check_clinic(self) -> Self:
-        """Check if clinic exists."""
-        if not APIClient().check_if_clinic_exist(self.clinic_id):
-            raise ValueError("Clínica não encontrada.")
-        return self
+    # @model_validator(mode="before")
+    # def check_clinic(self) -> Self:
+    #     """Check if clinic exists."""
+    #     if not check_clinic_id(self.clinic_id):
+    #         raise ValueError("Clínica não encontrada.")
+    #     return self
 
-    @model_validator(mode="before")
-    def check_desk(self) -> Self:
-        """Check if desk exists."""
-        if not APIClient().check_if_desk_exist(self.desk_id):
-            raise ValueError("Consultório não encontrado.")
+    # @model_validator(mode="before")
+    # def check_desk(self) -> Self:
+    #     """Check if desk exists."""
+    #     if not check_desk_exist(self.desk_id):
+    #         raise ValueError("Consultório não encontrado.")
 
-        if not APIClient().check_if_desk_vacancy(self.desk_id):
-            raise ValueError("Consultório não disponível.")
+    #     if not check_desk_vacancy(self.desk_id):
+    #         raise ValueError("Consultório não disponível.")
 
-        return self
+    #     return self
 
 
 class EditEventSchema(BaseSchema):
@@ -81,23 +81,24 @@ class EditEventSchema(BaseSchema):
             raise ValueError("Informe o motivo da ausência.")
         return self
 
-    @model_validator(mode="before")
-    def check_date(self) -> Self:
+    @field_validator("date", mode="before")
+    @classmethod
+    def check_date(cls, value: datetime) -> datetime:
         """Check if date is in the future."""
-        if self.date < datetime.now():
+        if value < datetime.now():
             raise ValueError("A data do agendamento deve ser futura.")
-        return self
+        return value
 
-    @model_validator(mode="before")
-    def check_desk(self) -> Self:
-        """Check if desk exists."""
-        if not APIClient().check_if_desk_exist(self.desk_id):
-            raise ValueError("Consultório não encontrado.")
+    # @model_validator(mode="before")
+    # async def check_desk(self) -> Self:
+    #     """Check if desk exists."""
+    #     if not await check_desk_exist(self.desk_id):
+    #         raise ValueError("Consultório não encontrado.")
 
-        if not APIClient().check_if_desk_vacancy(self.desk_id):
-            raise ValueError("Consultório não disponível.")
+    #     if not await check_desk_vacancy(self.desk_id):
+    #         raise ValueError("Consultório não disponível.")
 
-        return self
+    #     return self
 
 
 class EventSchema(BaseSchema):
@@ -167,7 +168,7 @@ class ErrorResponseSchema(BaseSchema):
 class Message(BaseSchema):
     """Message Schema"""
 
-    message_type: MessageType
+    message_type: MessageType = Field(alias="messageType")
     clinic_id: int = Field(alias="clinicId")
     data: Optional[
         Union[

@@ -9,12 +9,14 @@ from datetime import datetime
 from threading import Thread
 from typing import List
 
-from fastapi.websockets import WebSocketDisconnect
+from fastapi import WebSocket
+from fastapi.websockets import WebSocketDisconnect, WebSocketState
 from plus_db_agent.enums import SchedulerStatus
 from plus_db_agent.models import SchedulerModel
 from tortoise.exceptions import OperationalError
 from typing_extensions import Self
 
+from src.backends import check_clinic_id
 from src.enums import MessageType
 from src.scheduler.api_client import APIClient
 from src.scheduler.client import ClientWebSocket
@@ -48,24 +50,37 @@ class ConnectionManager:
             cls._instance = super(ConnectionManager, cls).__new__(cls)
         return cls._instance
 
-    async def connect(self, websocket: ClientWebSocket, clinic_id: int):
+    async def connect(self, websocket: WebSocket, clinic_id: int):
         """Add a new client connection to the list on connect"""
-        if self.api_client.check_if_clinic_exist(clinic_id):
+        client_websocket = ClientWebSocket(wb=websocket)
+        if await check_clinic_id(clinic_id):
             new_uuid = uuid.uuid4().hex
-            await websocket.accept(clinic_id=clinic_id, new_uuid=new_uuid)
-            await websocket.send_new_uuid(new_uuid)
-            self.client_connections.append(websocket)
-            self.__listenner(websocket)
+            await client_websocket.accept(client_id=clinic_id, uuid_code=new_uuid)
+            await client_websocket.send_new_uuid(new_uuid)
+            self.client_connections.append(client_websocket)
+            await self.__listenner(client_websocket)
         else:
-            await websocket.send_error_message("Token inválido ou clínica inexistente")
+            if client_websocket.wb.state == WebSocketState.CONNECTED:
+                await client_websocket.send_error_message(
+                    "Token inválido ou clínica inexistente"
+                )
+            elif websocket.application_state == "open":
+                await websocket.send(
+                    Message(
+                        message_type=MessageType.ERROR,
+                        clinic_id=clinic_id,
+                        data={"error": "Token inválido ou clínica inexistente"},
+                    )
+                )
             time.sleep(0.1)
             await websocket.close()
+            await client_websocket.close()
 
     async def disconnect(self, client: ClientWebSocket):
         """Remove a client connection from the list on disconnect"""
         if client in self.client_connections:
             self.client_connections.remove(client)
-        if client.state == "open":
+        if client.wb.state == WebSocketState.CONNECTED:
             await client.close()
 
     def get_all_connections(self) -> List[ClientWebSocket]:
@@ -96,7 +111,7 @@ class ConnectionManager:
         """Listen to incoming messages"""
         try:
             while True:
-                data = await websocket_client.receive_json()
+                data = await websocket_client.wb.receive_json()
                 try:
                     message = Message.model_validate_json(json.dumps(data))
                     await self.queue.put((websocket_client, message))

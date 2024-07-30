@@ -6,7 +6,7 @@ from typing import Optional
 import requests
 from plus_db_agent.models import HolidayModel
 
-from src.config import AUTH_API_URL, AUTH_KEY, INVERTEXTO_TOKEN
+from src.config import AUTH_API_URL, AUTH_KEY, CORE_API_URL, INVERTEXTO_TOKEN
 from src.enums import Ufs
 
 
@@ -17,6 +17,7 @@ class APIClient:
         if not INVERTEXTO_TOKEN:
             raise ValueError("INVERTEXTO_TOKEN not set")
 
+        print(AUTH_API_URL)
         if not AUTH_API_URL:
             raise ValueError("AUTH_API_URL not set")
 
@@ -45,37 +46,16 @@ class APIClient:
         except Exception:  # pylint: disable=broad-except
             return False
 
-    def check_if_clinic_exist(self, clinic_id: int) -> bool:
-        """Check if clinic exists"""
-        url = f"{AUTH_API_URL}/clinics/{clinic_id}/check/"
-        headers = {"X-API-Key": AUTH_KEY}
-        response = requests.get(url, headers=headers, timeout=500)
-        return response.status_code == 200 and response.json()
-
-    def check_if_desk_exist(self, desk_id: int) -> bool:
-        """Check if desk exists"""
-        url = f"{AUTH_API_URL}/desks/{desk_id}/check/"
-        headers = {"X-API-Key": AUTH_KEY}
-        response = requests.get(url, headers=headers, timeout=500)
-        return response.status_code == 200 and response.json()
-
-    def check_if_desk_vacancy(self, desk_id: int) -> bool:
-        """Check if desk vacancy"""
-        url = f"{AUTH_API_URL}/desks/{desk_id}/vacancy/"
-        headers = {"X-API-Key": AUTH_KEY}
-        response = requests.get(url, headers=headers, timeout=500)
-        return response.status_code == 200 and response.json()
-
     def check_is_token_is_valid(self, token: str) -> bool:
         """Check if token is valid"""
-        url = f"{AUTH_API_URL}/manager/check-token/"
+        url = f"{AUTH_API_URL}/auth/check-token/"
         headers = {"X-API-Key": AUTH_KEY, "Authorization": f"Bearer {token}"}
         response = requests.get(url, headers=headers, timeout=500)
         return response.status_code == 200 and response.json()
 
     def get_user_by_token(self, token: str) -> dict:
         """Get user by token"""
-        url = f"{AUTH_API_URL}/manager/me/"
+        url = f"{CORE_API_URL}/manager/me/"
         headers = {"X-API-Key": AUTH_KEY, "Authorization": f"Bearer {token}"}
         response = requests.get(url, headers=headers, timeout=500)
         return response.json()

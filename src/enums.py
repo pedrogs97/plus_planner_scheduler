@@ -35,7 +35,7 @@ class Ufs(str, Enum):
     TO = "TO"
 
 
-class MessageType(Enum):
+class MessageType(int, Enum):
     """Message Type Enum"""
 
     GET_FULL_MONTH_CALENDAR = 1

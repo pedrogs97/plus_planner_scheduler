@@ -47,15 +47,16 @@ DEFAULT_DATE_FORMAT = "%d/%m/%Y"
 DEFAULT_DATE_TIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 
 ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "http://127.0.0.1",
     "http://localhost",
-    "https://localhost:3000",
+    "https://localhost:5173",
     "https://127.0.0.1",
     "https://localhost",
 ]
 
 INVERTEXTO_TOKEN = os.getenv("INVERTEXTO_TOKEN")
 AUTH_API_URL = os.getenv("AUTH_API_URL")
+CORE_API_URL = os.getenv("CORE_API_URL")
 AUTH_KEY = os.getenv("AUTH_KEY")
